@@ -28,7 +28,7 @@ type Client struct {
 }
 
 // NewClient creates and returns a new Clubhouse Client.
-func NewClient(options Options) Client {
+func NewClient(options Options) CHClient {
 	client := Client{
 		token: options.Token,
 		url:   apiURL,
