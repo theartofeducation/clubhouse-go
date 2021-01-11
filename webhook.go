@@ -25,6 +25,7 @@ type Webhook struct {
 type WebhookAction struct {
 	EntityType EntityType `json:"entity_type"`
 	Action     Action
+	Name       string
 	Changes    WebhookActionChanges
 }
 

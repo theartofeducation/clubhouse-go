@@ -66,7 +66,7 @@ func Test_ParseWebhook(t *testing.T) {
 	t.Run("it parses and returns a webhook", func(t *testing.T) {
 		client := NewClient(options)
 
-		body := ioutil.NopCloser(strings.NewReader(`{"actions": [{"entity_type": "epic", "action": "update", "changes": {"state": {"new": "done"}}}]}`))
+		body := ioutil.NopCloser(strings.NewReader(`{"actions": [{"entity_type": "epic", "action": "update", "name": "Test Epic", "changes": {"state": {"new": "done"}}}]}`))
 
 		webhook, err := client.ParseWebhook(body)
 
@@ -80,6 +80,10 @@ func Test_ParseWebhook(t *testing.T) {
 
 		if webhook.Actions[0].Action != ActionUpdate {
 			t.Errorf("webhook has unexpected action: got %q want %q", webhook.Actions[0].Action, ActionUpdate)
+		}
+
+		if Action(webhook.Actions[0].Name) != "Test Epic" {
+			t.Errorf("webhook has unexpected name: got %q want %q", webhook.Actions[0].Name, "Test Epic")
 		}
 
 		if webhook.Actions[0].Changes.State.New != EpicStateDone {
