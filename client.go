@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/pkg/errors"
@@ -12,6 +13,7 @@ import (
 // CHClient defines available methods.
 type CHClient interface {
 	CreateEpic(name, description string) (Epic, error)
+	ParseWebhook(body io.ReadCloser) (Webhook, error)
 }
 
 const apiURL = "https://api.clubhouse.io/api/v3"
@@ -67,4 +69,17 @@ func (c Client) CreateEpic(name, description string) (Epic, error) {
 	}
 
 	return epic, nil
+}
+
+// ParseWebhook parses a Webhook's body and returns a Webhook struct.
+func (c Client) ParseWebhook(body io.ReadCloser) (Webhook, error) {
+	defer body.Close()
+
+	var webhook Webhook
+
+	if err := json.NewDecoder(body).Decode(&webhook); err != nil {
+		return webhook, errors.Wrap(err, "Could not parse Webhook body")
+	}
+
+	return webhook, nil
 }

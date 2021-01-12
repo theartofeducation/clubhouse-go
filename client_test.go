@@ -1,9 +1,13 @@
 package clubhouse
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
+
+	"github.com/pkg/errors"
 )
 
 var options = Options{Token: "abc123"}
@@ -54,6 +58,54 @@ func Test_CreateEpic(t *testing.T) {
 
 		if err == nil {
 			t.Fatal("did not receive error when expecting one")
+		}
+	})
+}
+
+func Test_ParseWebhook(t *testing.T) {
+	t.Run("it parses and returns a webhook", func(t *testing.T) {
+		client := NewClient(options)
+
+		body := ioutil.NopCloser(strings.NewReader(`{"actions": [{"entity_type": "epic", "action": "update", "name": "Test Epic", "changes": {"state": {"new": "done"}}}]}`))
+
+		webhook, err := client.ParseWebhook(body)
+
+		if err != nil {
+			t.Fatalf("received error when parsing webhook: %s", err)
+		}
+
+		if webhook.Actions[0].EntityType != EntityTypeEpic {
+			t.Errorf("webhook has unexpected entity type: got %q want %q", webhook.Actions[0].EntityType, EntityTypeEpic)
+		}
+
+		if webhook.Actions[0].Action != ActionUpdate {
+			t.Errorf("webhook has unexpected action: got %q want %q", webhook.Actions[0].Action, ActionUpdate)
+		}
+
+		if Action(webhook.Actions[0].Name) != "Test Epic" {
+			t.Errorf("webhook has unexpected name: got %q want %q", webhook.Actions[0].Name, "Test Epic")
+		}
+
+		if webhook.Actions[0].Changes.State.New != EpicStateDone {
+			t.Errorf("webhook has unexpected epic state: got %q want %q", webhook.Actions[0].Changes.State.New, EpicStateDone)
+		}
+	})
+
+	t.Run("it returns an error if webhook cannot be parsed", func(t *testing.T) {
+		client := NewClient(options)
+
+		body := ioutil.NopCloser(strings.NewReader(`{"actions":[{"entity_type": "epic", "action": "update"}]`))
+
+		_, err := client.ParseWebhook(body)
+
+		if err == nil {
+			t.Fatal("did not receive error when expecting one")
+		}
+
+		want := errors.New("Could not parse Webhook body: unexpected EOF")
+
+		if err.Error() != want.Error() {
+			t.Errorf("received incorrect error: got %q want %q", err, want)
 		}
 	})
 }
