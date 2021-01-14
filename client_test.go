@@ -1,6 +1,9 @@
 package clubhouse
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -10,7 +13,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-var options = Options{Token: "abc123"}
+var options = Options{
+	Token:         "abc123",
+	WebhookSecret: "testsecret",
+}
 
 func Test_NewClient(t *testing.T) {
 	t.Run("it creates and returns a new client", func(t *testing.T) {
@@ -106,6 +112,40 @@ func Test_ParseWebhook(t *testing.T) {
 
 		if err.Error() != want.Error() {
 			t.Errorf("received incorrect error: got %q want %q", err, want)
+		}
+	})
+}
+
+func Test_VerifySignature(t *testing.T) {
+	t.Run("it verifies a valid signature", func(t *testing.T) {
+		client := NewClient(options)
+
+		body := []byte("ghi890")
+
+		hash := hmac.New(sha256.New, []byte(options.WebhookSecret))
+		hash.Write(body)
+		signature := hex.EncodeToString(hash.Sum(nil))
+
+		err := client.VerifySignature(signature, body)
+
+		if err != nil {
+			t.Errorf("valid signature was not validated")
+		}
+	})
+
+	t.Run("it does not verify an invalid signature", func(t *testing.T) {
+		client := NewClient(options)
+
+		body := []byte("ghi890")
+
+		hash := hmac.New(sha256.New, []byte("bad secret"))
+		hash.Write(body)
+		signature := hex.EncodeToString(hash.Sum(nil))
+
+		err := client.VerifySignature(signature, body)
+
+		if err.Error() != ErrSignatureMismatch.Error() {
+			t.Errorf("correct error was not returned for invalid signature: got %s want %s", err, ErrSignatureMismatch)
 		}
 	})
 }

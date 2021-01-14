@@ -11,10 +11,11 @@ var ErrTest = errors.New("Test error")
 
 // MockClient is a mock Client to use for testing.
 type MockClient struct {
-	Epic              Epic
-	Webhook           Webhook
-	CreateEpicError   bool
-	ParseWebhookError bool
+	Epic                 Epic
+	Webhook              Webhook
+	CreateEpicError      bool
+	ParseWebhookError    bool
+	VerifySignatureError bool
 }
 
 // CreateEpic mock creates an Epic on Clubhouse.
@@ -33,4 +34,13 @@ func (c MockClient) ParseWebhook(body io.ReadCloser) (Webhook, error) {
 	}
 
 	return c.Webhook, nil
+}
+
+// VerifySignature mock validates a Webhook's signature.
+func (c MockClient) VerifySignature(signature string, body []byte) error {
+	if c.VerifySignatureError {
+		return ErrSignatureMismatch
+	}
+
+	return nil
 }
