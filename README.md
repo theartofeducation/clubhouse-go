@@ -11,6 +11,10 @@ A client for using the [Clubhouse API](https://clubhouse.io/api/rest/v3/).
 
 The library will create a new Epic on Clubhouse.
 
+### Webhooks
+
+The library will parse webhooks and validate webhook signatures.
+
 ### Mocking
 
 Full mocks for all features are included to make testing consuming modules easier.

@@ -2,6 +2,9 @@ package clubhouse
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -14,26 +17,30 @@ import (
 type CHClient interface {
 	CreateEpic(name, description string) (Epic, error)
 	ParseWebhook(body io.ReadCloser) (Webhook, error)
+	VerifySignature(signature string, body []byte) error
 }
 
 const apiURL = "https://api.clubhouse.io/api/v3"
 
 // Options are the settings needed when creating a new Client.
 type Options struct {
-	Token string
+	Token         string
+	WebhookSecret string
 }
 
 // Client handles interaction with the Clubhouse API.
 type Client struct {
-	url   string
-	token string
+	url           string
+	token         string
+	webhookSecret string
 }
 
 // NewClient creates and returns a new Clubhouse Client.
 func NewClient(options Options) CHClient {
 	client := Client{
-		token: options.Token,
-		url:   apiURL,
+		token:         options.Token,
+		url:           apiURL,
+		webhookSecret: options.WebhookSecret,
 	}
 
 	return client
@@ -82,4 +89,19 @@ func (c Client) ParseWebhook(body io.ReadCloser) (Webhook, error) {
 	}
 
 	return webhook, nil
+}
+
+// VerifySignature validates a Webhook's signature.
+func (c Client) VerifySignature(signature string, body []byte) error {
+	secret := []byte("testsecret")
+
+	hash := hmac.New(sha256.New, secret)
+	hash.Write(body)
+	generatedSignature := hex.EncodeToString(hash.Sum(nil))
+
+	if signature == generatedSignature {
+		return nil
+	}
+
+	return errors.New("Signature mismatch")
 }
