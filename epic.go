@@ -5,7 +5,8 @@ type EpicState string
 
 // Epic states.
 var (
-	EpicStateDone EpicState = "done"
+	EpicStateDone       EpicState = "done"
+	EpicStateInProgress EpicState = "in progress"
 )
 
 // Epic holds the information for a Clubhouse Epic.
